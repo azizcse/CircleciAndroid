@@ -1,0 +1,21 @@
+#
+# Build configuration for circle ci
+#
+
+geenral:
+  artifacts:
+    - /home/ubuntu/CircleciAndroid/app/build/outputs/apk/
+
+machine:
+  environment:
+    ANDROID_HOME: /Users/USER22/AppData/Local/Android/Sdk
+
+dependencies:
+  override:
+    - echo y | android update sdk --no-uo --all --filter tools,platform-tools,build-tools-28.0.3,extra-google-m2repository,extra-google-google_play_services,extra-android-support
+    - ANDROID_HOME=/Users/USER22/AppData/Local/Android/Sdk ./gradlew dependencies
+
+test:
+  override:
+    - (./gradlew assemble):
+        timeout:360

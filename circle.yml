@@ -2,20 +2,30 @@
 # Build configuration for circle ci
 #
 
-geenral:
-  artifacts:
-    - /home/ubuntu/CircleciAndroid/app/build/outputs/apk/
 
 machine:
-  environment:
-    ANDROID_HOME: /Users/USER22/AppData/Local/Android/Sdk
+  java:
+      version: openjdk8
 
 dependencies:
-  override:
-    - echo y | android update sdk --no-uo --all --filter tools,platform-tools,build-tools-28.0.3,extra-google-m2repository,extra-google-google_play_services,extra-android-support
-    - ANDROID_HOME=/Users/USER22/AppData/Local/Android/Sdk ./gradlew dependencies
+  pre:
+      - sudo apt-get update
+      - echo "${KEYFILE}" > "${HOME}/service_account.json"
+      - sudo /opt/google-cloud-sdk/bin/gcloud -q components update app-engine-java
+      - gcloud -q auth activate-service-account --key-file "${HOME}/service_account.json" || true
+      - gcloud -q config set project "${GOOGLE_PROJECT_ID}"
+      - sudo apt-add-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe"
+          && sudo apt-get update
+          && sudo apt-get install -t trusty-backports shellcheck
+      # Install Android SDK, tools, and build tools API 26
+      - echo "y" | android update sdk --no-ui --all --filter "tool,extra-android-m2repository,extra-android-support,extra-google-google_play_services,extra-google-m2repository"
+      - android list sdk -a
+      - echo "y" | "${ANDROID_HOME}/tools/bin/sdkmanager" "platforms;android-28" "tools" "build-tools;28.0.3" "build-tools;28.0.3"
+      - java -version
 
 test:
   override:
-    - (./gradlew assemble):
-        timeout:360
+    - export GOOGLE_VERSION_ID="cirlce-${CIRCLE_BUILD_NUM}"
+    - export GOOGLE_APPLICATION_CREDENTIALS="/home/ubuntu/service_account.json"
+    - bash run-tests.sh
+
